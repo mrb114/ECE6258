@@ -15,7 +15,21 @@ class IReg():
         
         Attributes: 
             ref: A reference image to which all floating images will be registered to
-            float: A image or set of images which will be registered to the reference image
+            float: A image or set of images which will be registered to the reference image stored
+                    in the following dictionary format: 
+                    self.float: {
+                            'Image0': {
+                                    'original': [input data for floating image 0],
+                                    'registered': [registered data for floating image 0]
+                            },
+                            
+                            ...
+                            
+                            'ImageN': {
+                                    'original': [input data for floating image N]
+                                    'registered': [registered data for floating image N]
+                            }
+                    }
             
     """
 
