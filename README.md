@@ -57,8 +57,16 @@ plt.imshow(regObj.float['Image0']['registered'])
 Implementation
 --------------
 Image Registration: 
-* Image registration uses the BSD licensed imreg_dft created by Christoph Gohlke which implements DFT based image registration 
+* Image registration uses the BSD licensed imreg_dft created by Matěj Týč and Christoph Gohlke which implements DFT based image registration (http://pythonhosted.org/imreg_dft/)
 * The imreg_dft package is designed for 2D images (i.e. not color images) thus the color images used for the purposes of this application must be handled separately 
 * To accomodate the color images, the registration transformation is computed for each channel of the input volumes and averaged across the R, G, and B channels before being applied to the float image 
 * As multiple floating images may be required to generate one successful group image, the image registration class, IReg, allows for multiple floating images to be uploaded at once and each will be registered individually to the reference image
 * Future implementations will include multi-processing to improve processing time of the registration process
+
+Development
+-----------
+When contributing to this repository please do the following: 
+* Use flake8 linting tool 
+* Update the requirements.txt file with any new dependencies 
+* Include a description of your changes in the commit changes 
+* Update this README to include any new information that may be helpful to other users/developers
