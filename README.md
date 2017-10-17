@@ -53,6 +53,15 @@ plt.imshow(regObj.float['Image0']['registered'])
 
 ```
 
+The image registration input is expected to be images in an array format. Each processing step of the class returns the object allowing for easy chaining of processes together. The transformed output of the float images can be found in the member variable structured as follows: 
+
+```
+# Registered image data associated with the first float input
+regObj.float['Image0']['registered']
+#Registered image data associated with the secon float input 
+regObj.float['Image1']['registered']
+```
+
 Implementation
 --------------
 Image Registration: 
