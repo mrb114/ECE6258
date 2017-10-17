@@ -1,5 +1,4 @@
 # ECE6258
-ECE6258 project 
 Written by Mallory Busso, Elena Haag, and Caroline Seng
 
 Installation
