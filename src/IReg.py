@@ -4,6 +4,8 @@
 Image Registration.
 """
 import numpy as np
+import imreg_dft as ird
+import matplotlib.pyplot as plt
 
 class IReg():
     """Image Registration class. 
@@ -32,9 +34,9 @@ class IReg():
         self.float = {}
         self._num_floats = 0
         if float_image is not None:
-            self.float['Image0'] = float_image
+            self.float['Image0'] = {}
+            self.float['Image0']['original'] = float_image
             self._num_floats += 1
-        return self
         
     def add_floating_img(self, img): 
         """Adds a floating image to the images to be registered
@@ -46,16 +48,55 @@ class IReg():
                 IReg object
         """
         self._num_floats += 1
-        self.float['Image%d' % self._num_floats] = img
+        self.float['Image%d' % self._num_floats] = {}
+        self.float['Image%d' % self._num_floats]['original'] = img
         return self
                   
     def register(self):
         """Registers the reference image to the floating image(s).
-        
+           
+           Uses DFT image registration from imreg_dft package on each channel
+           of the reference and float image(s). Registration parameters are
+           averaged across channels and average is applied to each channel 
+           to produce the registered final image. The resulting registered image 
+           is stored in the object float member variable following the prescribed
+           format: 
+               
+           object.float: {
+                   'Image 0': {
+                           'original': [original image data]
+                           'registered': [registered image data]
+                   }
+           }
+           
            Returns: 
                IReg object
         """
-        returns self
+        # For each float image
+        for float_image in np.arange(0, self._num_floats): 
+            print('processing float image 1')
+            curr_float = self.float['Image%d' % float_image]['original']
+            registration_vector = np.zeros([1,2])
+            scale = 0; 
+            angle = 0; 
+            # Compute registration for each channel 
+            for channel in np.arange(0, np.shape(self.ref)[2]): 
+                print('processing channel %d' % channel)
+                result = ird.similarity(self.ref[:,:,channel], curr_float[:, :, channel], numiter=3)
+                registration_vector += result['tvec']
+                scale += result['scale']
+                angle += result['angle']
+            # Average registration vector for each channel 
+            registration_vector /= np.shape(self.ref)[2]
+            scale /= np.shape(self.ref)[2]
+            angle /= np.shape(self.ref)[2]
+            # Apply average registration vector to entire image 
+            registered_img = np.zeros(np.shape(self.ref))
+            for channel in np.arange(0, np.shape(self.ref)[2]): 
+                print('applying transformation to channel %d' % channel)
+                registered_img[:, :, channel] = ird.transform_img(curr_float[:, :, channel], scale=scale, angle=angle, tvec=registration_vector[0])
+            self.float['Image%d' % float_image]['registered'] = np.uint8(registered_img)
+        return self
         
         
     
