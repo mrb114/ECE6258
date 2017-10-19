@@ -5,7 +5,14 @@ Image stitching based off of input images and a mask
 """
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+import math
+import os
+import scipy
+import sys
+
+from scipy.signal import convolve2d
+from scipy.stats import norm
+
 
 class IStitch(): 
     """Image stitching class. 
@@ -29,22 +36,59 @@ class IStitch():
         self.img1_ = img1
         self.img2_ = img2 
         self.mask_ = mask 
-        img_file = 'ECE6258/Images/one_face/Elena/Elena_closed.jpg'
-        img2_file = 'ECE6258/Images/one_face/Elena/Elena_smile.jpg'
-        temp_img1 = plt.imread(img_file)
-        self._test_mask = np.zeros(np.shape(temp_img1))
-        top = 741
-        bottom = 1891
-        left = 1508
-        right = 357
-        self._test_mask[top:bottom, left:right] = 1
         
-        # Include error check here if the three volumes are not the same size 
-        if "not the same size": 
-            raise Exception("error msg here")
             
-    def stitch_img(): 
+    def stitch_img(self): 
         """Stitch the images together. 
         """
-        self.stitched_img_ = self.mask_*self.img2_ + np.logical_not(self.mask_)*self.img1_
+        # The line directly below this doesn't actually work too poorly but could be improved on
+        #self.stitched_img_ = np.uint8(self.mask_*self.img2_ + np.logical_not(self.mask_)*self.img1_)
+        
+        # Need to pad with zeros to make the dimensions powers of 2 
+        img1 = _pad_img(self.img1_)
+        img2 = _pad_img(self.img2_)
+        mask = _pad_img(self.mask_)
+        
+        # Define number of levels in pyramid 
+        num_levels = 6
+        
+        # Apply gaussian pyramids
+        gaussian_img1 = _gaussian_pyramid(img1, num_levels)
+        gaussian_img2 = _gaussian_pyramid(img2, num_levels)
+        gaussian_mask = _gaussian_pyramid(mask, num_levels)
+        
+        # Apply laplacian pyramids
+        laplacian_img1 = _laplacian_pyramid(gaussian_img1, num_levels)
+        laplacian_img2 = _laplacian_pyramid(gaussian_img2, num_levels)
+        laplacian_mask = _laplacian_pyramid(gaussian_mask, num_levels)
+        
+        # Apply mask and reconstruct
+        self.stitched_img_ = _reconstruct_pyramid(laplacian_img1, laplacian_img2, laplacian_mask)
         return self
+        
+    def _pad_img(img): 
+        # pad image here to closest power of 2 in x and y dimensions 
+        pass
+        
+    def _gaussian_pyramid(img, n): 
+        pyramid = [img]
+        for i in np.arange(0, n): 
+            pyramid.append(cv2.pyrDown(img))
+        return pyramid
+        
+    def _laplacian_pyramid(gaussian_pyramid, n): 
+        n -= 1
+        pyramid = [gaussian_pyramid[n]]
+        for i in np.arange(n, 0, -1): 
+            pyramid.append(cv2.subtract(gaussian_pyramid[i - 1], cv2.pyrUp(gaussian_pyramid[i])))
+        return pyramid 
+        
+    def _reconstruct_pyramid(img1, img2, mask): 
+        lap_summed = []
+        for lap1,lap2, lapMask in zip(img1,img2, mask):
+            lap_summed.append(np.hstack((lap1*lapMask, lap2*np.logical_not(lapMask))))
+        lap_recon = lap_summed[0]
+        for i in np.arange(1,6):
+            lap_recon = cv2.add(cv2.pyrUp(lap_recon), lap_summed[i])
+
+ 

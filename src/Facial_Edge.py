@@ -30,6 +30,7 @@ class Facial_Edge():
         self.img = face_recognition.load_image_file(os.path.abspath(image_loc))
         self.face_options = []
         self.selected_face = -1
+        self._rot90 = False
         
     def identify(self): 
         """Identify faces in image
@@ -38,6 +39,7 @@ class Facial_Edge():
         if len(self.face_options) == 0: 
             self.img = np.rot90(self.img)
             self.face_options = face_recognition.face_locations(self.img)
+            self._rot90 = True
         if len(self.face_options) == 0: 
             raise Exception("Error: Unable to detect faces in images")
         return self
@@ -71,19 +73,23 @@ class Facial_Edge():
             Returns: 
                 mask (ndarray): A binary mask representing the location of the face in the new image
         """
+        
+            
         # Identify faces in new image
         new_img = face_recognition.load_image_file(os.path.abspath(image_loc))
+        # Match rotation performed on original image
+        if self._rot90:
+            new_img = np.rot90(new_img)
         new_face_options = face_recognition.face_locations(new_img) # , model='cnn')
         
         # Initialize mask 
         mask = np.zeros(np.shape(new_img))
         
         # Compare each of the selected faces to the face encoding generated from the select_face() function 
-        for face_loc in new_face_options: 
-            top, right, bottom, left = face_loc
-            curr_face = new_img[top:bottom, left:right]
-            curr_encoding = face_recognition.face_encodings(curr_face)[0]
-            if face_recognition.compare_faces([self._face_encoding], curr_encoding)[0]: 
+        encodings = face_recognition.face_encodings(new_img, new_face_options)
+        for i in np.arange(0, len(new_face_options)): 
+            if face_recognition.compare_faces([self._face_encoding], encodings[i])[0]: 
+                top, right, bottom, left = new_face_options[i]
                 mask[top:bottom, left:right] = 1
                 break
             
