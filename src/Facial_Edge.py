@@ -5,6 +5,7 @@ Facial Edge Detection
 """
 
 import face_recognition
+import numpy as np
 import os
 
 
@@ -33,7 +34,12 @@ class Facial_Edge():
     def identify(self): 
         """Identify faces in image
         """
-        self.face_options = face_recognition.face_locations(self.img, model="cnn")
+        self.face_options = face_recognition.face_locations(self.img)
+        if len(self.face_options) == 0: 
+            self.img = np.rot90(self.img)
+            self.face_options = face_recognition.face_locations(self.img)
+        if len(self.face_options) == 0: 
+            raise Exception("Error: Unable to detect faces in images")
         return self
         
     def select_face(self, index): 
@@ -54,6 +60,7 @@ class Facial_Edge():
         top, right, bottom, left = self.face_options[index]
         self.selected_face = self.img[top:bottom, left:right]
         self._face_encoding = face_recognition.face_encodings(self.selected_face)[0]
+        return self
 
     def locate_face(self, image_loc): 
         """Identify the selected face in a new image. 
@@ -65,8 +72,22 @@ class Facial_Edge():
                 mask (ndarray): A binary mask representing the location of the face in the new image
         """
         # Identify faces in new image
+        new_img = face_recognition.load_image_file(os.path.abspath(image_loc))
+        new_face_options = face_recognition.face_locations(new_img) # , model='cnn')
+        
+        # Initialize mask 
+        mask = np.zeros(np.shape(new_img))
+        
         # Compare each of the selected faces to the face encoding generated from the select_face() function 
+        for face_loc in new_face_options: 
+            top, right, bottom, left = face_loc
+            curr_face = new_img[top:bottom, left:right]
+            curr_encoding = face_recognition.face_encodings(curr_face)[0]
+            if face_recognition.compare_faces([self._face_encoding], curr_encoding)[0]: 
+                mask[top:bottom, left:right] = 1
+                break
+            
         # Once identified, apply a mask to the selected face - we may need to apply some facial segmentation on the sub region
         # Return the mask indicating where the face is in the image
-        pass
+        return mask
     
