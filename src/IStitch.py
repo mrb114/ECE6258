@@ -3,16 +3,15 @@
 """
 Image stitching based off of input images and a mask
 """
-import cv2
+#import cv2
 import numpy as np
 import math
 import os
+import matplotlib.pyplot as plt
 import scipy
 import sys
-
 from scipy.signal import convolve2d
 from scipy.stats import norm
-
 
 class IStitch(): 
     """Image stitching class. 
@@ -26,18 +25,7 @@ class IStitch():
             mask_           (ndarray): Identifies area of images to stitch together
             stitched_img_   (ndarray): Stitched image
     """
-
-    def __init__(self, img1, img2, mask): 
-        """Write about this fxn
-        
-            Args: 
-                
-        """
-        self.img1_ = img1
-        self.img2_ = img2 
-        self.mask_ = mask 
-        
-            
+  
     def stitch_img(self): 
         """Stitch the images together. 
         """
@@ -52,6 +40,7 @@ class IStitch():
         # Define number of levels in pyramid 
         num_levels = 6
         
+           
         # Apply gaussian pyramids
         gaussian_img1 = _gaussian_pyramid(img1, num_levels)
         gaussian_img2 = _gaussian_pyramid(img2, num_levels)
@@ -64,11 +53,23 @@ class IStitch():
         
         # Apply mask and reconstruct
         self.stitched_img_ = _reconstruct_pyramid(laplacian_img1, laplacian_img2, laplacian_mask)
+        self.stitched_img = self.stitched_img[0:np.shape(self.img1)[0], 0:np.shape(self.img1)[1]]
         return self
-        
+    def _next_power_two(number):
+        # Returns next power of 2 of a number - what to zero pad to
+        return np.ceil(np.log2(number))
     def _pad_img(img): 
         # pad image here to closest power of 2 in x and y dimensions 
-        pass
+        length = np.shape(img)[0]
+        width = np.shape(img)[1]
+        # Check if the dimension are powers of 2
+        next_power_length = np.ceil(np.log2(length))
+        next_power_width = np.ceil(np.log2(width))
+        deficit_length =int(2**next_power_length - length);
+        deficit_width = int(2**next_power_width - width);
+
+        imagenew = np.pad(img, ((0, deficit_length), (0, deficit_width), (0,0)), 'constant') 
+        return imagenew
         
     def _gaussian_pyramid(img, n): 
         pyramid = [img]
