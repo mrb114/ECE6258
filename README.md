@@ -30,7 +30,7 @@ To install dependencies directly related to this project, use the following comm
 pip install -r requirements.txt
 ```
 
-This command should allow the user to install all development related dependencies. 
+This command should allow the user to install all development related dependencies with the exception of the "face_recognition" package. Please see the repository for detailed instructions on how to set up your environment with this package: https://github.com/ageitgey/face_recognition
 
 Usage
 ------
@@ -70,6 +70,13 @@ Image Registration:
 * To accomodate the color images, the registration transformation is computed for each channel of the input volumes and averaged across the R, G, and B channels before being applied to the float image 
 * As multiple floating images may be required to generate one successful group image, the image registration class, IReg, allows for multiple floating images to be uploaded at once and each will be registered individually to the reference image
 * Future implementations will include multi-processing to improve processing time of the registration process
+
+Facial Segmentation: 
+* TODO 
+
+Image Stitching: 
+* Image stitching is implemented using the mask created from the facial segmenation step with Gaussian pyramids. 
+* OpenCV implementations of pyramid generations are utilized for the creation of the Gaussian and Laplacian pyramids. 
 
 Development
 -----------
