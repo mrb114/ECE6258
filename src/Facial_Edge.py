@@ -21,13 +21,13 @@ class Facial_Edge():
         selected_face   (ndarray)  : An image representing the face selected
         
     """
-    def __init__(self, image_loc):
+    def __init__(self, image):
         """Initialize Facial Edge Object
         
             Args: 
-                image_loc (filepath): Filepath from which to read input image
+                image (ndarray): Input image
         """
-        self.img = face_recognition.load_image_file(os.path.abspath(image_loc))
+        self.img = np.uint8(image)
         self.face_options = []
         self.selected_face = -1
         self._rot90 = False
@@ -64,22 +64,19 @@ class Facial_Edge():
         self._face_encoding = face_recognition.face_encodings(self.selected_face)[0]
         return self
 
-    def locate_face(self, image_loc): 
+    def locate_face(self, new_img): 
         """Identify the selected face in a new image. 
         
             Args: 
-                image_loc (filepath): Filepath from which to read input image
+                image (filepath): Filepath from which to read input image
                 
             Returns: 
                 mask (ndarray): A binary mask representing the location of the face in the new image
         """
-        
-            
-        # Identify faces in new image
-        new_img = face_recognition.load_image_file(os.path.abspath(image_loc))
         # Match rotation performed on original image
         if self._rot90:
-            new_img = np.rot90(new_img)
+            new_img = np.uint8(np.rot90(new_img))
+        # Identify faces in new image
         new_face_options = face_recognition.face_locations(new_img) # , model='cnn')
         
         # Initialize mask 
@@ -94,6 +91,9 @@ class Facial_Edge():
                 break
             
         # Once identified, apply a mask to the selected face - we may need to apply some facial segmentation on the sub region
-        # Return the mask indicating where the face is in the image
-        return mask
+        # Save the mask indicating where the face is in the image
+        if self._rot90: 
+            mask = np.rot90(mask, 3)
+        self.mask = mask
+        return self
     

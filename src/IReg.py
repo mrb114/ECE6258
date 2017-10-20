@@ -5,7 +5,6 @@ Image Registration.
 """
 import numpy as np
 import imreg_dft as ird
-import matplotlib.pyplot as plt
 
 class IReg():
     """Image Registration class. 
@@ -109,8 +108,6 @@ class IReg():
             for channel in np.arange(0, np.shape(self.ref)[2]): 
                 print('applying transformation to channel %d' % channel)
                 registered_img[:, :, channel] = ird.transform_img(curr_float[:, :, channel], scale=scale, angle=angle, tvec=registration_vector[0])
-            self.float['Image%d' % float_image]['registered'] = np.uint8(registered_img)
+            self.float['Image%d' % float_image]['registered'] = registered_img
         return self
-        
-        
     
