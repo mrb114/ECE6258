@@ -5,6 +5,7 @@ Image Registration.
 """
 import numpy as np
 import imreg_dft as ird
+import cv2
 
 class IReg():
     """Image Registration class. 
@@ -49,6 +50,7 @@ class IReg():
         if float_image is not None:
             self.float['Image0'] = {}
             self.float['Image0']['original'] = float_image
+            self.float['Image0']['registered'] = None
             self._num_floats += 1
         
     def add_floating_img(self, img): 
@@ -63,6 +65,7 @@ class IReg():
         self._num_floats += 1
         self.float['Image%d' % self._num_floats] = {}
         self.float['Image%d' % self._num_floats]['original'] = img
+        self.float['Image%d' % self._num_floats]['registered'] = None      
         return self
                   
     def register(self):
@@ -87,27 +90,71 @@ class IReg():
         """
         # For each float image
         for float_image in np.arange(0, self._num_floats): 
-            print('processing float image 1')
+            if self.float['Image%d' % float_image]['registered'] is not None: 
+                continue
+            print('processing float image %d' % float_image)
             curr_float = self.float['Image%d' % float_image]['original']
-            registration_vector = np.zeros([1,2])
-            scale = 0; 
-            angle = 0; 
-            # Compute registration for each channel 
-            for channel in np.arange(0, np.shape(self.ref)[2]): 
-                print('processing channel %d' % channel)
-                result = ird.similarity(self.ref[:,:,channel], curr_float[:, :, channel], numiter=3)
-                registration_vector += result['tvec']
-                scale += result['scale']
-                angle += result['angle']
-            # Average registration vector for each channel 
-            registration_vector /= np.shape(self.ref)[2]
-            scale /= np.shape(self.ref)[2]
-            angle /= np.shape(self.ref)[2]
-            # Apply average registration vector to entire image 
-            registered_img = np.zeros(np.shape(self.ref))
-            for channel in np.arange(0, np.shape(self.ref)[2]): 
-                print('applying transformation to channel %d' % channel)
-                registered_img[:, :, channel] = ird.transform_img(curr_float[:, :, channel], scale=scale, angle=angle, tvec=registration_vector[0])
+
+            im1_gray = cv2.cvtColor(self.ref,cv2.COLOR_BGR2GRAY)
+            im2_gray = cv2.cvtColor(curr_float,cv2.COLOR_BGR2GRAY)
+            
+            # Find size of image1
+            sz = self.ref.shape
+             
+            # Define the motion model
+            #warp_mode = cv2.MOTION_TRANSLATION
+            warp_mode = cv2.MOTION_HOMOGRAPHY
+             
+            # Define 2x3 or 3x3 matrices and initialize the matrix to identity
+            if warp_mode == cv2.MOTION_HOMOGRAPHY :
+                warp_matrix = np.eye(3, 3, dtype=np.float32)
+            else :
+                warp_matrix = np.eye(2, 3, dtype=np.float32)
+             
+            # Specify the number of iterations.
+            number_of_iterations = 5000;
+             
+            # Specify the threshold of the increment
+            # in the correlation coefficient between two iterations
+            termination_eps = 1e-10;
+             
+            # Define termination criteria
+            criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
+             
+            # Run the ECC algorithm. The results are stored in warp_matrix.
+            (cc, warp_matrix) = cv2.findTransformECC (im1_gray,im2_gray,warp_matrix, warp_mode, criteria)
+             
+            if warp_mode == cv2.MOTION_HOMOGRAPHY :
+                # Use warpPerspective for Homography 
+                registered_img = cv2.warpPerspective (curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+            else :
+                # Use warpAffine for Translation, Euclidean and Affine
+                registered_img = cv2.warpAffine(curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
+             
+#            registration_vector = np.zeros([1,2])
+#            scale = 0; 
+#            angle = 0; 
+#            
+#            result = ird.similarity(im1_gray, im2_gray, numiter=3)
+#            registration_vector = result['tvec']
+#            scale = result['scale']
+#            angle = result['angle']
+##            # Compute registration for each channel 
+##            for channel in np.arange(0, np.shape(self.ref)[2]): 
+##                print('processing channel %d' % channel)
+##                result = ird.similarity(self.ref[:,:,channel], curr_float[:, :, channel], numiter=3)
+##                registration_vector += result['tvec']
+##                scale += result['scale']
+##                angle += result['angle']
+##            # Average registration vector for each channel 
+##            registration_vector /= np.shape(self.ref)[2]
+##            scale /= np.shape(self.ref)[2]
+##            angle /= np.shape(self.ref)[2]
+#            # Apply average registration vector to entire image 
+#            registered_img = np.zeros(np.shape(self.ref))
+#            for channel in np.arange(0, np.shape(self.ref)[2]): 
+#                print('applying transformation to channel %d' % channel)
+#                registered_img[:, :, channel] = ird.transform_img(curr_float[:, :, channel], scale=scale, angle=angle, tvec=registration_vector)
             self.float['Image%d' % float_image]['registered'] = registered_img
         return self
     

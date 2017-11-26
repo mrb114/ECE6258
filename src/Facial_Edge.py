@@ -4,9 +4,11 @@
 Facial Edge Detection
 """
 
+import cv2
 import face_recognition
 import numpy as np
 import os
+import IReg
 
 
 class Facial_Edge():
@@ -31,15 +33,37 @@ class Facial_Edge():
         self.face_options = []
         self.selected_face = -1
         self._rot90 = False
+        cascade_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'haarcascade_frontalface_alt.xml')
+        profile_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'haarcascade_profileface.xml')
+        self.face_cascade = cv2.CascadeClassifier(cascade_filepath)
+        self.profile_cascade = cv2.CascadeClassifier(profile_filepath)
         
-    def identify(self): 
+    def identify(self, img=None): 
         """Identify faces in image
         """
-        self.face_options = face_recognition.face_locations(self.img)
-        if len(self.face_options) == 0: 
-            self.img = np.rot90(self.img)
-            self.face_options = face_recognition.face_locations(self.img)
-            self._rot90 = True
+        return_indices = True
+        if img is None: 
+            img = self.img.copy()
+            return_indices = False
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        face_options = self.face_cascade.detectMultiScale(gray_img, scaleFactor=1.1, minNeighbors=5)
+        face_options2 = self.profile_cascade.detectMultiScale(gray_img, scaleFactor=1.1, minNeighbors=5)
+        combo_face_options = []
+        mask = np.zeros(np.shape(img))
+        for face in face_options2: 
+            face_options
+        for (x, y, w, h) in face_options:
+            combo_face_options.append([x, y, w, h])
+            mask[x:x+w, y:y+h] = 1
+        for (x, y, w, h) in face_options2:
+            if np.sum(mask[x:x+w, y:y+h])/(w*h) < .75:
+                combo_face_options.append([x, y, w, h]) 
+        if return_indices: 
+            return combo_face_options
+        self.face_img = img.copy()
+        for (x, y, w, h) in combo_face_options:
+            cv2.rectangle(self.face_img, (x, y), (x+w, y+h), (0, 255, 0), 4)
+        self.face_options = combo_face_options
         if len(self.face_options) == 0: 
             raise Exception("Error: Unable to detect faces in images")
         return self
@@ -59,9 +83,9 @@ class Facial_Edge():
         if index > len(self.face_options): 
             raise ValueError('Error: the index selected exceeds the dimensions available for facial selection.')
         
-        top, right, bottom, left = self.face_options[index]
-        self.selected_face = self.img[top:bottom, left:right]
-        self._face_encoding = face_recognition.face_encodings(self.selected_face)[0]
+        x, y, w, h = self.face_options[index]
+        self.selected_face = self.img[y:y+h, x:x+w]
+        self.selected_face_loc = self.face_options[index]
         return self
 
     def locate_face(self, new_img): 
@@ -73,27 +97,65 @@ class Facial_Edge():
             Returns: 
                 mask (ndarray): A binary mask representing the location of the face in the new image
         """
-        # Match rotation performed on original image
-        if self._rot90:
-            new_img = np.uint8(np.rot90(new_img))
         # Identify faces in new image
-        new_face_options = face_recognition.face_locations(new_img) # , model='cnn')
+        new_face_options = self.identify(new_img)
         
         # Initialize mask 
-        mask = np.zeros(np.shape(new_img))
+        mask = np.zeros(np.shape(self.img))
+        new_face_mask = self.img.copy()
         
         # Compare each of the selected faces to the face encoding generated from the select_face() function 
-        encodings = face_recognition.face_encodings(new_img, new_face_options)
+        #encodings = face_recognition.face_encodings(new_img, new_face_options)
+        (xS, yS, wS, hS) = self.selected_face_loc
         for i in np.arange(0, len(new_face_options)): 
-            if face_recognition.compare_faces([self._face_encoding], encodings[i])[0]: 
-                top, right, bottom, left = new_face_options[i]
-                mask[top:bottom, left:right] = 1
+            if self.compare_faces(self.selected_face_loc, new_face_options[i], self.img, new_img): 
+                x, y, w, h = new_face_options[i]
+                w = np.min([w, wS])
+                h = np.min([h, hS])
+                offset = 25
+                selected_face = self.img[yS-offset:yS+h+offset, xS-offset:xS+w+offset, :]
+                new_face = new_img[y-offset:y+h+offset, x-offset:x+h+offset, :]
+                reg = IReg.IReg(selected_face, new_face).register()
+                new_face_reg = reg.float['Image0']['registered']
+                mask[yS:yS+h, xS:xS+w] = 1
+                new_face_mask[yS-offset:yS+h+offset, xS-offset:xS+w+offset] = new_face_reg
                 break
+#            if face_recognition.compare_faces([self._face_encoding], encodings[i])[0]: 
+#                top, right, bottom, left = new_face_options[i]
+#                mask[top:bottom, left:right] = 1
+#                break
             
         # Once identified, apply a mask to the selected face - we may need to apply some facial segmentation on the sub region
         # Save the mask indicating where the face is in the image
-        if self._rot90: 
-            mask = np.rot90(mask, 3)
+#        if self._rot90: 
+#            mask = np.rot90(mask, 3)
         self.mask = mask
+        self.new_face_mask = new_face_mask
         return self
+    
+    def compare_faces(self, face1, face2, img1, img2): 
+        (x1, y1, w1, h1) = face1
+        (x2, y2, w2, h2) = face2
+        w = np.max([w1, w2])
+        h = np.max([h1, h2])
+        if x1+w > img1.shape[1] or x2+w > img2.shape[1]: 
+            w = np.min([w1, w2])
+        if y1+h > img1.shape[0] or y2+h > img2.shape[0]: 
+            h = np.min([h1, h2])
+        face1_img = img1[y1:y1+h, x1:x1+w, :]
+        face2_img = img2[y2:y2+h, x2:x2+w, :]
+        corr_mat = np.corrcoef(face1_img.flat, face2_img.flat)
+        corr_coef = corr_mat[0, 1]
+        print(corr_coef)
+        if corr_coef > .7:
+            return True
+        return False
+#        
+#        mask = np.zeros(np.shape(img1))
+#        (x, y, w, h) = face1
+#        mask[x:x+w, y:y+h] = 1
+#        (x, y, w, h) = face2
+#        if np.sum(mask[x:x+w, y:y+h])/(w*h) >= .5:
+#            return True
+#        return False
     
