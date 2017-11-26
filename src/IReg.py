@@ -4,7 +4,6 @@
 Image Registration.
 """
 import numpy as np
-import imreg_dft as ird
 import cv2
 
 class IReg():
@@ -131,30 +130,6 @@ class IReg():
                 # Use warpAffine for Translation, Euclidean and Affine
                 registered_img = cv2.warpAffine(curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
              
-#            registration_vector = np.zeros([1,2])
-#            scale = 0; 
-#            angle = 0; 
-#            
-#            result = ird.similarity(im1_gray, im2_gray, numiter=3)
-#            registration_vector = result['tvec']
-#            scale = result['scale']
-#            angle = result['angle']
-##            # Compute registration for each channel 
-##            for channel in np.arange(0, np.shape(self.ref)[2]): 
-##                print('processing channel %d' % channel)
-##                result = ird.similarity(self.ref[:,:,channel], curr_float[:, :, channel], numiter=3)
-##                registration_vector += result['tvec']
-##                scale += result['scale']
-##                angle += result['angle']
-##            # Average registration vector for each channel 
-##            registration_vector /= np.shape(self.ref)[2]
-##            scale /= np.shape(self.ref)[2]
-##            angle /= np.shape(self.ref)[2]
-#            # Apply average registration vector to entire image 
-#            registered_img = np.zeros(np.shape(self.ref))
-#            for channel in np.arange(0, np.shape(self.ref)[2]): 
-#                print('applying transformation to channel %d' % channel)
-#                registered_img[:, :, channel] = ird.transform_img(curr_float[:, :, channel], scale=scale, angle=angle, tvec=registration_vector)
-            self.float['Image%d' % float_image]['registered'] = registered_img
+           self.float['Image%d' % float_image]['registered'] = registered_img
         return self
     

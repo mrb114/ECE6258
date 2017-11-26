@@ -33,15 +33,6 @@ class FaceSwap():
         new_id = "image_id%s" % len(self.images)
         self.images[new_id] = {}
         self.images[new_id]['img_data'] = image
-        # Add image as reference image if first or floating image otherwise
-        if self.img_reg is None: 
-            self.img_reg = IReg.IReg(image)
-        else: 
-            # we already have a reference image, add a new floating image
-            self.img_reg.add_floating_img(image)
-            # register the floating image
-            self.img_reg.register()
-        print("Registered image")
         # Compute faces in images 
         self.images[new_id]['facial_edge'] = Facial_Edge.Facial_Edge(image)
         self.images[new_id]['facial_edge'].identify()
@@ -58,23 +49,20 @@ class FaceSwap():
                     continue
                 for curr_face in self.images[curr_id]['faces'].keys():
                     if curr_face in self.images[new_id]['faces'].keys(): 
-                        break
-                    curr_encoding = self.images[curr_id]['faces'][curr_face]['encoding']
-                    if self.images[new_id]['facial_edge'].compare_faces(curr_encoding): 
+                        continue
+                    if self.images[new_id]['facial_edge'].compare_faces(self.images[new_id]['facial_edge'].face_options[face], 
+                                                                        self.images[curr_id]['faces'][curr_face]['location'], 
+                                                                        self.images[new_id]['img_data'], 
+                                                                        self.images[curr_id]['img_data']): 
                         self.images[new_id]['faces'][curr_face] = {}
-                        self.images[new_id]['faces'][curr_face]['encoding'] = self.images[new_id]['facial_edge']._face_encoding 
                         self.images[new_id]['faces'][curr_face]['location'] = self.images[new_id]['facial_edge'].face_options[face]
+                        face_found = True
                         break
             if not face_found:
                 self.total_num_faces += 1
                 new_face_id = "face_id%d" % self.total_num_faces
                 self.images[new_id]['faces'][new_face_id] = {}
-                self.images[new_id]['faces'][new_face_id]['encoding'] = self.images[new_id]['facial_edge']._face_encoding 
                 self.images[new_id]['faces'][new_face_id]['location'] = self.images[new_id]['facial_edge'].face_options[face]
-                
-        # Match pre-existing faces from dict to those in image
-        # If faces aren't in dict, then add them 
-        # Record faceids in image dict 
         
     def get_face_dims(self, face_id): 
         return self.images[self.current_image_id]['faces'][face_id]

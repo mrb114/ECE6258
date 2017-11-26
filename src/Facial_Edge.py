@@ -5,7 +5,6 @@ Facial Edge Detection
 """
 
 import cv2
-import face_recognition
 import numpy as np
 import os
 import IReg
@@ -105,7 +104,6 @@ class Facial_Edge():
         new_face_mask = self.img.copy()
         
         # Compare each of the selected faces to the face encoding generated from the select_face() function 
-        #encodings = face_recognition.face_encodings(new_img, new_face_options)
         (xS, yS, wS, hS) = self.selected_face_loc
         for i in np.arange(0, len(new_face_options)): 
             if self.compare_faces(self.selected_face_loc, new_face_options[i], self.img, new_img): 
@@ -120,15 +118,6 @@ class Facial_Edge():
                 mask[yS:yS+h, xS:xS+w] = 1
                 new_face_mask[yS-offset:yS+h+offset, xS-offset:xS+w+offset] = new_face_reg
                 break
-#            if face_recognition.compare_faces([self._face_encoding], encodings[i])[0]: 
-#                top, right, bottom, left = new_face_options[i]
-#                mask[top:bottom, left:right] = 1
-#                break
-            
-        # Once identified, apply a mask to the selected face - we may need to apply some facial segmentation on the sub region
-        # Save the mask indicating where the face is in the image
-#        if self._rot90: 
-#            mask = np.rot90(mask, 3)
         self.mask = mask
         self.new_face_mask = new_face_mask
         return self
@@ -150,12 +139,3 @@ class Facial_Edge():
         if corr_coef > .7:
             return True
         return False
-#        
-#        mask = np.zeros(np.shape(img1))
-#        (x, y, w, h) = face1
-#        mask[x:x+w, y:y+h] = 1
-#        (x, y, w, h) = face2
-#        if np.sum(mask[x:x+w, y:y+h])/(w*h) >= .5:
-#            return True
-#        return False
-    
