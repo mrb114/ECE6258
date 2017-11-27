@@ -61,6 +61,8 @@ class FaceSwap():
                         self.images[new_id]['faces'][curr_face] = {}
                         self.images[new_id]['faces'][curr_face]['location'] = self.images[new_id]['facial_edge'].face_options[face]
                         self.images[new_id]['faces'][curr_face]['index'] = face
+                        (x, y, w, h) = self.images[new_id]['facial_edge'].face_options[face]
+                        self.images[new_id]['faces'][curr_face]['face_data'] = self.images[new_id]['img_data'][y:y+h, x:x+w, :]
                         face_found = True
                         break
             if not face_found:
@@ -69,6 +71,9 @@ class FaceSwap():
                 self.images[new_id]['faces'][new_face_id] = {}
                 self.images[new_id]['faces'][new_face_id]['location'] = self.images[new_id]['facial_edge'].face_options[face]
                 self.images[new_id]['faces'][new_face_id]['index'] = face
+                (x, y, w, h) = self.images[new_id]['facial_edge'].face_options[face]
+                self.images[new_id]['faces'][new_face_id]['face_data'] = self.images[new_id]['img_data'][y:y+h, x:x+w, :]
+        return new_id
         
     def get_face_dims(self, face_id): 
         return self.current_image['faces'][face_id]['location']
