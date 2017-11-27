@@ -101,7 +101,7 @@ class Facial_Edge():
         
         # Initialize mask 
         mask = np.zeros(np.shape(self.img))
-        new_face_mask = self.img.copy()
+        new_face_mask = np.zeros(np.shape(self.img))
         
         # Compare each of the selected faces to the face encoding generated from the select_face() function 
         (xS, yS, wS, hS) = self.selected_face_loc
@@ -110,13 +110,15 @@ class Facial_Edge():
                 x, y, w, h = new_face_options[i]
                 w = np.min([w, wS])
                 h = np.min([h, hS])
-                offset = 25
+                offset = 30
                 selected_face = self.img[yS-offset:yS+h+offset, xS-offset:xS+w+offset, :]
                 new_face = new_img[y-offset:y+h+offset, x-offset:x+h+offset, :]
                 reg = IReg.IReg(selected_face, new_face).register()
                 new_face_reg = reg.float['Image0']['registered']
                 mask[yS:yS+h, xS:xS+w] = 1
-                new_face_mask[yS-offset:yS+h+offset, xS-offset:xS+w+offset] = new_face_reg
+                new_face_mask[yS-offset:yS+h+offset, xS-offset:xS+w+offset] = np.uint8(new_face_reg)
+                indices = new_face_mask <= 0
+                new_face_mask[indices] = self.img[indices]
                 break
         self.mask = mask
         self.new_face_mask = new_face_mask

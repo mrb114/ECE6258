@@ -10,6 +10,7 @@ import cv2
 import Facial_Edge
 import IReg
 import IStitch
+import FaceSwap
 import matplotlib.pyplot as plt
 import scipy.misc
 import numpy as np
@@ -37,7 +38,7 @@ print("Read in images")
 
 # Detect faces in images - only one face in image so select it at index 0
 face = Facial_Edge.Facial_Edge(bad_img).identify().select_face(0).locate_face(good_img)
-face = face.select_face(0).locate_face(good_img)
+#face = face.select_face(0).locate_face(good_img)
 face_mask = face.mask
 new_face_mask = face.new_face_mask
 mask_img_path = '/Users/mrb114/Documents/2016-2017/Image Processing/Project/repo/ECE6258/Images/one_face/Elena/Elena_mask.jpg'
@@ -136,3 +137,20 @@ else :
 cv2.imshow("Image 1", im1)
 cv2.imshow("Image 2", im2)
 cv2.imshow("Aligned Image 2", im2_aligned)
+
+
+
+
+
+
+
+fs_obj = FaceSwap.FaceSwap()
+fs_obj.upload_image(bad_img)
+fs_obj.upload_image(good_img)
+fs_obj.set_image('image_id0')
+fs_obj.get_face_dims('face_id2')
+fs_obj.process_face('image_id1', 'face_id2')
+fs_obj.process_face('image_id1', 'face_id1')
+fs_obj.process_face('image_id1', 'face_id3')
+stitched_img_path = '/Users/mrb114/Documents/2016-2017/Image Processing/Project/repo/ECE6258/Images/one_face/Elena/Elena_stitched.jpg'
+scipy.misc.imsave(stitched_img_path, fs_obj.current_image['img_data'])

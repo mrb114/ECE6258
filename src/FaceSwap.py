@@ -18,16 +18,20 @@ class FaceSwap():
     def __init__(self): 
         self.images = {}
         self.faces = {}
-        self.current_image = None
+        self.current_image = {}
         self._current_image_id = None
         self.face_swap = None
         self.img_reg = None
         self.total_num_faces = 0
         
     def set_image(self, image_id): 
-        self.current_image = self.images.get(image_id).get('image')
-        self._current_image_id = image_id
-        return self.images.get(image_id).get('faces')
+        self.current_image = {}
+        self.current_image['img_data'] = self.images[image_id]['img_data']
+        self.current_image['face_image'] = self.images[image_id]['facial_edge'].face_img
+        self.current_image['facial_edge'] = self.images[image_id]['facial_edge']
+        self.current_image['faces'] = self.images[image_id]['faces']
+        self.current_image['id'] = image_id
+        return self.current_image
     
     def upload_image(self, image): 
         new_id = "image_id%s" % len(self.images)
@@ -56,6 +60,7 @@ class FaceSwap():
                                                                         self.images[curr_id]['img_data']): 
                         self.images[new_id]['faces'][curr_face] = {}
                         self.images[new_id]['faces'][curr_face]['location'] = self.images[new_id]['facial_edge'].face_options[face]
+                        self.images[new_id]['faces'][curr_face]['index'] = face
                         face_found = True
                         break
             if not face_found:
@@ -63,11 +68,11 @@ class FaceSwap():
                 new_face_id = "face_id%d" % self.total_num_faces
                 self.images[new_id]['faces'][new_face_id] = {}
                 self.images[new_id]['faces'][new_face_id]['location'] = self.images[new_id]['facial_edge'].face_options[face]
+                self.images[new_id]['faces'][new_face_id]['index'] = face
         
     def get_face_dims(self, face_id): 
-        return self.images[self.current_image_id]['faces'][face_id]
+        return self.current_image['faces'][face_id]['location']
         
-    
     def delete_image(self, image_id):
         # Remove dict entry from images dict 
         try: 
@@ -77,22 +82,35 @@ class FaceSwap():
             pass
     
     def get_current_image(self): 
-        return self.current_image
+        return self.current_image['img_data']
     
-    def process_face(self, face_id): 
-        pass
+    def process_face(self, image_id, face_id): 
+        face_index = self.current_image['faces'][face_id]['index']
+        new_face_img_data = self.images[image_id]['img_data']
+
+        # Determine face overlap and register
+        face = self.current_image['facial_edge'].select_face(face_index).locate_face(new_face_img_data)
+        face_mask = face.mask
+        new_face_mask = face.new_face_mask
+        print("Detected faces")
+        
+        # Stitch the images together
+        stitch = IStitch.IStitch(np.float64(self.current_image['img_data']), np.float64(new_face_mask), face_mask).stitch_img()
+        self.current_image['img_data'] = stitch.stitched_img_
+        print("Stiched Images")
+        return self.current_image['img_data']
+        
+        
         """
         images = {
                 "imageid1": {
                         "img_data": np.array(image_data),
                         "faces": {
                                 "faceid1": {
-                                        "location": [x, y, xDim, yDim], 
-                                        "encoding": encoding_val
+                                        "location": [x, y, xDim, yDim]
                                         }
                                 "faceid2":{
-                                        "location": [x, y, xDim, yDim], 
-                                        "encoding": encoding_val
+                                        "location": [x, y, xDim, yDim]
                                         }
                                 }
                         },
@@ -100,12 +118,10 @@ class FaceSwap():
                         "img_data": np.array(image_data),
                         "faces": {
                                 "faceid1": {
-                                        "location": [x, y, xDim, yDim], 
-                                        "encoding": encoding_val
+                                        "location": [x, y, xDim, yDim]
                                         } 
                                 "faceid2": {
-                                        "location": [x, y, xDim, yDim], 
-                                        "encoding": encoding_val
+                                        "location": [x, y, xDim, yDim]
                                         }
                                 }
                         }

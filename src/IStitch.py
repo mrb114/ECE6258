@@ -94,5 +94,5 @@ class IStitch():
         recon = lap_summed[0]
         for i in np.arange(1,6):
             recon = cv2.pyrUp(recon)+ lap_summed[i]
-        return np.uint8(recon)
+        return recon
  

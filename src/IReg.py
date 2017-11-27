@@ -129,7 +129,6 @@ class IReg():
             else :
                 # Use warpAffine for Translation, Euclidean and Affine
                 registered_img = cv2.warpAffine(curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
-             
-           self.float['Image%d' % float_image]['registered'] = registered_img
+            self.float['Image%d' % float_image]['registered'] = registered_img
         return self
     
