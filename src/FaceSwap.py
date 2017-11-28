@@ -22,7 +22,7 @@ class FaceSwap():
         self._current_image_id = None
         self.face_swap = None
         self.img_reg = None
-        self.total_num_faces = 0
+        self.total_num_faces = -1
         
     def set_image(self, image_id): 
         self.current_image = {}

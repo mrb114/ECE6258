@@ -1,21 +1,26 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+from gevent import monkey
+monkey.patch_all()
+
+from gevent import wsgi
 import FaceSwap
 import os
 import json
 import matplotlib.pyplot as plt
 import scipy.misc
+import numpy as np
 
 from flask_cors import CORS
 from flask import Flask, jsonify, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
-UPLOAD_FOLDER = os.path.join(os.path.abspath(__file__),'static')
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)),'static')
 ALLOWED_EXTENSIONS = set([ 'bmp', 'png', 'jpg', 'jpeg', 'gif'])
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 fs_obj = FaceSwap.FaceSwap()
 
 def allowed_file(filename):
@@ -23,24 +28,23 @@ def allowed_file(filename):
 
 @app.route("/upload", methods=['POST'])
 def upload_img():
-    if 'file' not in request.files:
-        return redirect(request.url)
-    file = request.files['file']
-    # if user does not select file, browser also
-    # submit a empty part without filename
-    if file.filename == '':
-        return redirect(request.url)
+    try:
+        files = request.files['file']
+    except Exception: 
+        return json.dumps({'success': False}), 405, {'ContentType':'application/json'}
     img_data = None
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(UPLOAD_FOLDER, filename))
+    if files and allowed_file(files.filename):
+        filename = secure_filename(files.filename)
+        files.save(os.path.join(UPLOAD_FOLDER, filename))
         img_data = plt.imread(os.path.join(UPLOAD_FOLDER, filename))
     if not img_data is None: 
         image_id = fs_obj.upload_image(img_data)
+        image_url = request.host_url[0:-1] + url_for('static', filename=filename)
         
     result_json = {}
     result_json['image_id'] = image_id
-    return json.dumps(result_json)
+    result_json['image_url'] = image_url
+    return json.dumps(result_json) 
 
 @app.route("/select/image/<string:image_id>")
 def select_img(image_id):
@@ -52,14 +56,15 @@ def select_img(image_id):
     img_name = 'boxed_faces.jpg'
     img_path = os.path.join(UPLOAD_FOLDER, img_name)
     scipy.misc.imsave(img_path, boxed_faces_img)
-    boxed_faces_url = url_for('static', filename=img_name)
+    boxed_faces_url = request.host_url[0:-1] + url_for('static', filename=img_name)
     
     # Format result
     result_json = {}
     result_json['faces'] = {}
     for face in image_data['faces']: 
-        result_json['faces'][face] = image_data['faces'][face]['location']
+        result_json['faces'][face] = [int(x) for x in image_data['faces'][face]['location']]
     result_json['boxed_faces'] = boxed_faces_url
+    print(result_json)
 
     return json.dumps(result_json)
     
@@ -102,6 +107,9 @@ def swap_face(image_id, face_id):
 @app.route("/swap/result")
 def export(): 
     pass
+
+server = wsgi.WSGIServer(("localhost", 8000), app)
+server.serve_forever()
 
 if __name__ == '__main__': 
     app.run()
