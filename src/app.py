@@ -40,7 +40,7 @@ def upload_img():
         
     result_json = {}
     result_json['image_id'] = image_id
-    return result_json
+    return json.dumps(result_json)
 
 @app.route("/select/image/<string:image_id>")
 def select_img(image_id):
@@ -61,7 +61,7 @@ def select_img(image_id):
         result_json['faces'][face] = image_data['faces'][face]['location']
     result_json['boxed_faces'] = boxed_faces_url
 
-    return result_json
+    return json.dumps(result_json)
     
     
 @app.route("/select/face/<string:face_id>")
@@ -77,7 +77,7 @@ def select_face(face_id):
                 scipy.misc.imsave(img_path, face_img)
                 face_url = url_for('static', filename=img_name)
                 result_json[image] = face_url
-    return result_json
+    return json.dumps(result_json)
 
 @app.route("/delete/<string:image_id>", methods=['DELETE'])
 def delete_img(image_id): 
