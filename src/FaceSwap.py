@@ -32,6 +32,15 @@ class FaceSwap():
         self.current_image['faces'] = self.images[image_id]['faces']
         self.current_image['id'] = image_id
         return self.current_image
+        
+    def reset(self): 
+        self.images = {}
+        self.faces = {}
+        self.current_image = {}
+        self._current_image_id = None
+        self.face_swap = None
+        self.img_reg = None
+        self.total_num_faces = -1
     
     def upload_image(self, image): 
         new_id = "image_id%s" % len(self.images)

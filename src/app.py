@@ -13,7 +13,7 @@ import scipy.misc
 import numpy as np
 
 from flask_cors import CORS
-from flask import Flask, jsonify, request, redirect, url_for
+from flask import Flask, jsonify, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)),'static')
@@ -52,7 +52,7 @@ def select_img(image_id):
     image_data = fs_obj.set_image(image_id) 
 
     # Get URL for boxed faces image
-    boxed_faces_img = image_data['face_image']
+    boxed_faces_img = image_data['img_data'] #image_data['face_image']
     img_name = 'boxed_faces.jpg'
     img_path = os.path.join(UPLOAD_FOLDER, img_name)
     scipy.misc.imsave(img_path, boxed_faces_img)
@@ -64,6 +64,7 @@ def select_img(image_id):
     for face in image_data['faces']: 
         result_json['faces'][face] = [int(x) for x in image_data['faces'][face]['location']]
     result_json['boxed_faces'] = boxed_faces_url
+    result_json['img_dims'] = [int(boxed_faces_img.shape[0]), int(boxed_faces_img.shape[1])]
     print(result_json)
 
     return json.dumps(result_json)
@@ -76,11 +77,11 @@ def select_face(face_id):
     for image in fs_obj.images: 
         for face in fs_obj.images[image]['faces']:
             if face_id == face: 
-                face_img = fs_obj.images[image][face]['face_data']
+                face_img = fs_obj.images[image]['faces'][face]['face_data']
                 img_name = '%s-%s.jpg' % (image, face)
                 img_path = os.path.join(UPLOAD_FOLDER, img_name)
                 scipy.misc.imsave(img_path, face_img)
-                face_url = url_for('static', filename=img_name)
+                face_url = request.host_url[0:-1] + url_for('static', filename=img_name)
                 result_json[image] = face_url
     return json.dumps(result_json)
 
@@ -102,11 +103,24 @@ def swap_face(image_id, face_id):
     scipy.misc.imsave(result_path, result_img)
     
     # return resulting image URL
-    return jsonify(url_for('static', filename=result_name))
+    result_json = {}
+    result_json['result'] = request.host_url[0:-1] + url_for('static', filename=result_name)
+    return json.dumps(result_json)
     
-@app.route("/swap/result")
+@app.route("/export")
 def export(): 
-    pass
+    result_path = os.path.join(UPLOAD_FOLDER, 'result.jpg')
+    if os.path.isfile(result_path): 
+        result_json = {}
+        result_json['result'] = request.host_url[0:-1] + url_for('static', filename='result.jpg')
+        return json.dumps(result_json)
+    return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+    
+@app.route("/restart")
+def restart(): 
+    fs_obj.reset()
+    return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+        
 
 server = wsgi.WSGIServer(("localhost", 8000), app)
 server.serve_forever()
