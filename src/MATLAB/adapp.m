@@ -18,8 +18,8 @@ classdef adapp < handle
     % User-set properties
     properties (Access = public)
         imagedir = '\\prism.nas.gatech.edu\cseng3\vlab\documents\GitHub\ECE6258\Images\IQDev';
-        metafilename = [pwd,'imageInfo.xlsx'];
-        resultsfilename = [pwd,'results.xlsx'];
+        metafilename = '\\prism.nas.gatech.edu\cseng3\vlab\documents\MATLAB\project\GUI\imageinfo.xlsx';
+        resultsfilename = '\\prism.nas.gatech.edu\cseng3\vlab\documents\MATLAB\project\GUI\results.xlsx';
         resultsTable = table;
     end
     
@@ -33,7 +33,7 @@ classdef adapp < handle
         currentEntry
         testOrder
         resultsHeaders = {'UserName','Timestamp','SetIndex',...
-                'SetName','ImageIndex','IsComposite','Filename','Response'};
+                'SetName','ImageIndex','IsComposite','ParentIndex','Filename','Response'};
     end
 
     % Callback functions
@@ -79,35 +79,6 @@ classdef adapp < handle
     % App initialization and construction
     methods (Access = private)
 
-        function result = runApp(app)
-            
-            % Select and order the test images
-            composeTest(app);
-            
-            % Show instruction dialog
-            message = ['Judge the images. Are they unaltered "original" photos, or have they been constructed from multiple images (a "composite")? Don''t spend too much time on any one image. 20 seconds, tops.'];
-            button = questdlg(message, 'Instructions', 'I''m ready', 'Quit', 'OK');
-            drawnow;	% Refresh screen to get rid of dialog box remnants.
-            if strcmpi(button, 'Quit')
-                delete(app);
-                return
-            end
-            
-            % Ask for tester ID
-            prompt = {'Enter your name:'};
-            dlg_title = 'User name entry';
-            num_lines = 1;
-            defaultans = app.userName;
-            app.userName = inputdlg(prompt,dlg_title,num_lines,defaultans);
-
-            % Set up test to run
-            app.currentTestIndex = 0;
-            showNextImage(app);
-            app.UIFigure.Visible = 'on';
-            
-            result = true;
-        end
-        
         % Select the images to show in the assessment
         function composeTest(app)
             nSets = max(app.metatable.SetIndex);
@@ -246,6 +217,7 @@ classdef adapp < handle
             app.resultsTable{app.currentTestIndex,'SetName'} = app.currentEntry.SetName;
             app.resultsTable{app.currentTestIndex,'ImageIndex'} = app.currentEntry.ImageIndex;
             app.resultsTable{app.currentTestIndex,'IsComposite'} = app.currentEntry.IsComposite;
+            app.resultsTable{app.currentTestIndex,'ParentIndex'} = app.currentEntry.ParentIndex;
             app.resultsTable{app.currentTestIndex,'Filename'} = app.currentEntry.Filename;
             % User-response variables
             app.resultsTable{app.currentTestIndex,'Response1'} = response1Value(app);
@@ -290,6 +262,7 @@ classdef adapp < handle
 
         % Construct app
         function app = adapp
+            warning('off','all');
 
             % Create and configure components
             createComponents(app);
@@ -298,7 +271,7 @@ classdef adapp < handle
             loadMetadata(app);
             
             % Run the app
-            runApp(app);
+            % run(app);
             
         end
 
@@ -308,5 +281,36 @@ classdef adapp < handle
             % Delete UIFigure when app is deleted
             delete(app.UIFigure)
         end
+        
+        % Run app
+        function result = run(app)
+            
+            % Select and order the test images
+            composeTest(app);
+            
+            % Show instruction dialog
+            message = ['Judge the images. Are they unaltered "original" photos, or have they been constructed from multiple images (a "composite")? Don''t spend too much time on any one image. 20 seconds, tops.'];
+            button = questdlg(message, 'Instructions', 'I''m ready', 'Quit', 'OK');
+            drawnow;	% Refresh screen to get rid of dialog box remnants.
+            if strcmpi(button, 'Quit')
+                delete(app);
+                return
+            end
+            
+            % Ask for tester ID
+            prompt = {'Enter your name:'};
+            dlg_title = 'User name entry';
+            num_lines = 1;
+            defaultans = app.userName;
+            app.userName = inputdlg(prompt,dlg_title,num_lines,defaultans);
+
+            % Set up test to run
+            app.currentTestIndex = 0;
+            showNextImage(app);
+            app.UIFigure.Visible = 'on';
+            
+            result = true;
+        end
+        
     end
 end
