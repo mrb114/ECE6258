@@ -22,23 +22,19 @@ ALLOWED_EXTENSIONS = set([ 'bmp', 'png', 'jpg', 'jpeg', 'gif'])
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 fs_obj = FaceSwap.FaceSwap()
-img_count = 0
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/upload", methods=['POST'])
 def upload_img():
-    global img_count
     try:
         files = request.files['file']
     except Exception: 
         return json.dumps({'success': False}), 405, {'ContentType':'application/json'}
     img_data = None
     if files and allowed_file(files.filename):
-        filename = os.path.splitext(secure_filename(files.filename))
-        filename = filename[0] + str(img_count) + filename[1]
-        img_count += 1
+        filename = secure_filename(files.filename)
         files.save(os.path.join(UPLOAD_FOLDER, filename))
         img_data = plt.imread(os.path.join(UPLOAD_FOLDER, filename))
     if not img_data is None: 
@@ -52,14 +48,12 @@ def upload_img():
 
 @app.route("/select/image/<string:image_id>")
 def select_img(image_id):
-    global img_count
     # Set the image and get information about selection
     image_data = fs_obj.set_image(image_id) 
 
     # Get URL for boxed faces image
     boxed_faces_img = image_data['img_data'] #image_data['face_image']
-    img_name = 'boxed_faces%d.jpg' % img_count
-    img_count += 1
+    img_name = 'boxed_faces.jpg'
     img_path = os.path.join(UPLOAD_FOLDER, img_name)
     scipy.misc.imsave(img_path, boxed_faces_img)
     boxed_faces_url = request.host_url[0:-1] + url_for('static', filename=img_name)
@@ -78,15 +72,13 @@ def select_img(image_id):
     
 @app.route("/select/face/<string:face_id>")
 def select_face(face_id): 
-    global img_count
     # return images for each face available for replacement
     result_json = {}
     for image in fs_obj.images: 
         for face in fs_obj.images[image]['faces']:
             if face_id == face: 
                 face_img = fs_obj.images[image]['faces'][face]['face_data']
-                img_name = '%s-%s%d.jpg' % (image, face, img_count)
-                img_count += 1
+                img_name = '%s-%s.jpg' % (image, face)
                 img_path = os.path.join(UPLOAD_FOLDER, img_name)
                 scipy.misc.imsave(img_path, face_img)
                 face_url = request.host_url[0:-1] + url_for('static', filename=img_name)
@@ -102,13 +94,11 @@ def delete_img(image_id):
 
 @app.route("/swap/<string:image_id>/<string:face_id>")
 def swap_face(image_id, face_id): 
-    global img_count
     # process request
     result_img = fs_obj.process_face(image_id, face_id)
     
     # save result 
-    result_name = 'result%d.jpg' % img_count
-    img_count += 1
+    result_name = 'result.jpg' 
     result_path = os.path.join(UPLOAD_FOLDER, result_name)
     scipy.misc.imsave(result_path, result_img)
     
@@ -116,15 +106,6 @@ def swap_face(image_id, face_id):
     result_json = {}
     result_json['result'] = request.host_url[0:-1] + url_for('static', filename=result_name)
     return json.dumps(result_json)
-    
-"""@app.route("/export")
-def export(): 
-    result_path = os.path.join(UPLOAD_FOLDER, 'result.jpg')
-    if os.path.isfile(result_path): 
-        result_json = {}
-        result_json['result'] = request.host_url[0:-1] + url_for('static', filename='result.jpg')
-        return json.dumps(result_json)
-    return json.dumps({'success':True}), 200, {'ContentType':'application/json'} """
     
 @app.route("/restart")
 def restart(): 
