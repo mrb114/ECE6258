@@ -33,6 +33,7 @@ def upload_img():
     except Exception: 
         return json.dumps({'success': False}), 405, {'ContentType':'application/json'}
     img_data = None
+    image_id = None
     if files and allowed_file(files.filename):
         filename = secure_filename(files.filename)
         files.save(os.path.join(UPLOAD_FOLDER, filename))
@@ -41,6 +42,9 @@ def upload_img():
         image_id = fs_obj.upload_image(img_data)
         image_url = request.host_url[0:-1] + url_for('static', filename=filename)
         
+    if image_id is None:
+        return json.dumps({'success': True}), {'ContentType':'application/json'}
+
     result_json = {}
     result_json['image_id'] = image_id
     result_json['image_url'] = image_url
