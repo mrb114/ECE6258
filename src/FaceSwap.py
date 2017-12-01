@@ -158,6 +158,15 @@ class FaceSwap():
             raise Exception("Face ID %s not present in selected image" % face_id)
         
     def delete_image(self, image_id):
+        """Delete an image from the uploaded image set
+        
+            Deletes an image from the uploaded set. Does nothing
+            if the imageID doesn't exist in the dictionary since
+            that means it's already gone. 
+            
+            Args: 
+                image_id (str): Image ID to be deleted 
+        """
         # Remove dict entry from images dict 
         try: 
             self.images.pop(image_id)
@@ -166,15 +175,39 @@ class FaceSwap():
             pass
     
     def get_current_image(self): 
-        return self.current_image['img_data']
+        """Returns the image data of the currently selected image. 
+        
+            Returns: 
+                Image data
+                
+            Raises: 
+                Exception: Unable to return image data. Try selecting an image first. 
+        
+        """
+        try: 
+            return self.current_image['img_data']
+        except Exception: 
+            raise Exception("Unable to return image data. Try selecting an image first.")
     
     def process_face(self, image_id, face_id): 
+        """ Replace a face in the currently selected image. 
+        
+            Args: 
+                image_id (str): Image ID of the image from which to extract the face 
+                face_id  (str): Face ID of the face that should be replaced in the selected image
+                
+            Returns: 
+                The resulting stitched image
+                
+            Raises: 
+                Exception: Error swapping faces.
+        """
+        # Get information about the face to be swapped
         face_index = self.current_image['faces'][face_id]['index']
         new_face_img_data = self.images[image_id]['img_data']
         new_face_bb = self.images[image_id]["faces"][face_id]['location']
 
         # Determine face overlap and register
-        #face = self.current_image['facial_edge'].select_face(face_index).locate_face(new_face_img_data)
         face = self.current_image['facial_edge'].select_face(face_index).replace_face(new_face_img_data, new_face_bb)
         face_mask = face.mask
         new_face_mask = face.new_face_mask
@@ -186,40 +219,4 @@ class FaceSwap():
         print("Stiched Images")
         return self.current_image['img_data']
         
-        
-        """
-        images = {
-                "imageid1": {
-                        "img_data": np.array(image_data),
-                        "faces": {
-                                "faceid1": {
-                                        "location": [x, y, xDim, yDim]
-                                        }
-                                "faceid2":{
-                                        "location": [x, y, xDim, yDim]
-                                        }
-                                }
-                        },
-                "imageid2": {
-                        "img_data": np.array(image_data),
-                        "faces": {
-                                "faceid1": {
-                                        "location": [x, y, xDim, yDim]
-                                        } 
-                                "faceid2": {
-                                        "location": [x, y, xDim, yDim]
-                                        }
-                                }
-                        }
-                }
-        faces = {
-                "faceid1": {
-                        'imageid1': 0, 
-                        'imageid2': 1
-                        }
-                "faceid2": {
-                        'imageid2': 0
-                        }
-        }
-                        """
         
