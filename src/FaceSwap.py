@@ -202,21 +202,23 @@ class FaceSwap():
             Raises: 
                 Exception: Error swapping faces.
         """
-        # Get information about the face to be swapped
-        face_index = self.current_image['faces'][face_id]['index']
-        new_face_img_data = self.images[image_id]['img_data']
-        new_face_bb = self.images[image_id]["faces"][face_id]['location']
-
-        # Determine face overlap and register
-        face = self.current_image['facial_edge'].select_face(face_index).replace_face(new_face_img_data, new_face_bb)
-        face_mask = face.mask
-        new_face_mask = face.new_face_mask
-        print("Detected faces")
-        
-        # Stitch the images together
-        stitch = IStitch.IStitch(np.float64(self.current_image['img_data']), np.float64(new_face_mask), face_mask).stitch_img()
-        self.current_image['img_data'] = stitch.stitched_img_
-        print("Stiched Images")
-        return self.current_image['img_data']
-        
+        try: 
+            # Get information about the face to be swapped
+            face_index = self.current_image['faces'][face_id]['index']
+            new_face_img_data = self.images[image_id]['img_data']
+            new_face_bb = self.images[image_id]["faces"][face_id]['location']
+    
+            # Determine face overlap and register
+            face = self.current_image['facial_edge'].select_face(face_index).replace_face(new_face_img_data, new_face_bb)
+            face_mask = face.mask
+            new_face_mask = face.new_face_mask
+            print("Detected faces")
+            
+            # Stitch the images together
+            stitch = IStitch.IStitch(np.float64(self.current_image['img_data']), np.float64(new_face_mask), face_mask).stitch_img()
+            self.current_image['img_data'] = stitch.stitched_img_
+            print("Stiched Images")
+            return self.current_image['img_data']
+        except Exception: 
+            raise Exception("Error swapping faces")
         
