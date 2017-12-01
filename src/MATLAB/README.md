@@ -8,13 +8,13 @@ This MATLAB application allows users to assess for the presence and severity of 
 
 A demo of this application is configured to run from this repository. Simply clone the repository and execute `AppDemo.m` in MATLAB.
 
-To create your own test sequence, create an input file similar to `imageinfo.xlsx` in this directory.  This table allows you to define sets of images and provide their filenames.  Organize these images into a single folder.  You may use a run script similar to `AppDemo.m` to run the application; set the input and output filename parameters according to your created input file and desired output file. Finally, run the script to start the application.
+To create your own test sequence, create an input file similar to `imageinfo.xlsx` in this directory.  This table allows you to define sets of images and provide their filenames.  It also allows you to specify whether or not an image is an original or a composite image that has face swaps.  Organize these images into a single folder.  You may use a run script similar to `AppDemo.m` to run the application; set the input and output filename parameters according to your created input file and desired output file. Finally, run the script to start the application.
 
 See the `screenshots` directory for a visual demonstration of the application workflow.
 
 IQ Metrics
 ------------
-This MATLAB function computes image quality metrics for pairs of images provided in an input file, and writes the results to file.  
+This MATLAB function computes objective image quality metrics for pairs of images provided in an input file, and writes the results to file.  
 
 This code references the UNIQUE and MS-UNIQUE IQ algorithms, used with permisison from Mohit Prabhushankar.
 
