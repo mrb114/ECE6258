@@ -55,26 +55,24 @@ class FaceSwap():
         for face in range(0, len(self.images[new_id]['facial_edge'].face_options)): 
             print('Working on face %d' % face)
             self.images[new_id]['facial_edge'].select_face(face)
-            face_found = False
+            max_corr_coef = 0.0
+            matching_id = None
             for image_id in range(0, len(self.images)): 
                 curr_id = "image_id%s" % image_id
+                
                 if curr_id == new_id: 
                     continue
                 for curr_face in self.images[curr_id]['faces'].keys():
                     if curr_face in self.images[new_id]['faces'].keys(): 
                         continue
-                    if self.images[new_id]['facial_edge'].compare_faces(self.images[new_id]['facial_edge'].face_options[face], 
+                    curr_corr_coef = self.images[new_id]['facial_edge'].compare_faces(self.images[new_id]['facial_edge'].face_options[face], 
                                                                         self.images[curr_id]['faces'][curr_face]['location'], 
                                                                         self.images[new_id]['img_data'], 
-                                                                        self.images[curr_id]['img_data']): 
-                        self.images[new_id]['faces'][curr_face] = {}
-                        self.images[new_id]['faces'][curr_face]['location'] = self.images[new_id]['facial_edge'].face_options[face]
-                        self.images[new_id]['faces'][curr_face]['index'] = face
-                        (x, y, w, h) = self.images[new_id]['facial_edge'].face_options[face]
-                        self.images[new_id]['faces'][curr_face]['face_data'] = self.images[new_id]['img_data'][y:y+h, x:x+w, :]
-                        face_found = True
-                        break
-            if not face_found:
+                                                                        self.images[curr_id]['img_data'])
+                    if curr_corr_coef > max_corr_coef: 
+                        max_corr_coef = curr_corr_coef
+                        matching_id = curr_face
+            if max_corr_coef < .7:
                 self.total_num_faces += 1
                 new_face_id = "face_id%d" % self.total_num_faces
                 self.images[new_id]['faces'][new_face_id] = {}
@@ -82,6 +80,12 @@ class FaceSwap():
                 self.images[new_id]['faces'][new_face_id]['index'] = face
                 (x, y, w, h) = self.images[new_id]['facial_edge'].face_options[face]
                 self.images[new_id]['faces'][new_face_id]['face_data'] = self.images[new_id]['img_data'][y:y+h, x:x+w, :]
+            else: 
+                self.images[new_id]['faces'][matching_id] = {}
+                self.images[new_id]['faces'][matching_id]['location'] = self.images[new_id]['facial_edge'].face_options[face]
+                self.images[new_id]['faces'][matching_id]['index'] = face
+                (x, y, w, h) = self.images[new_id]['facial_edge'].face_options[face]
+                self.images[new_id]['faces'][matching_id]['face_data'] = self.images[new_id]['img_data'][y:y+h, x:x+w, :]
         return new_id
         
     def get_face_dims(self, face_id): 
@@ -101,9 +105,11 @@ class FaceSwap():
     def process_face(self, image_id, face_id): 
         face_index = self.current_image['faces'][face_id]['index']
         new_face_img_data = self.images[image_id]['img_data']
+        new_face_bb = self.images[image_id]["faces"][face_id]['location']
 
         # Determine face overlap and register
-        face = self.current_image['facial_edge'].select_face(face_index).locate_face(new_face_img_data)
+        #face = self.current_image['facial_edge'].select_face(face_index).locate_face(new_face_img_data)
+        face = self.current_image['facial_edge'].select_face(face_index).replace_face(new_face_img_data, new_face_bb)
         face_mask = face.mask
         new_face_mask = face.new_face_mask
         print("Detected faces")

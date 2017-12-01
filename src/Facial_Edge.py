@@ -86,6 +86,32 @@ class Facial_Edge():
         self.selected_face = self.img[y:y+h, x:x+w]
         self.selected_face_loc = self.face_options[index]
         return self
+        
+    def replace_face(self, new_img, new_face_bb): 
+        """Replace a known face location in a new image 
+        """
+        # Initialize mask 
+        mask = np.zeros(np.shape(self.img))
+        new_face_mask = np.zeros(np.shape(self.img))
+        
+        # Compare bounding boxes of selected face and new face
+        (xS, yS, wS, hS) = self.selected_face_loc
+        x, y, w, h = new_face_bb
+        w = np.min([w, wS])
+        h = np.min([h, hS])
+        offset = 30
+        selected_face = self.img[yS-offset:yS+h+offset, xS-offset:xS+w+offset, :]
+        new_face = new_img[y-offset:y+h+offset, x-offset:x+h+offset, :]
+        reg = IReg.IReg(selected_face, new_face).register()
+        new_face_reg = reg.float['Image0']['registered']
+        mask[yS:yS+h, xS:xS+w] = 1
+        new_face_mask[yS-offset:yS+h+offset, xS-offset:xS+w+offset] = np.uint8(new_face_reg)
+        indices = new_face_mask <= 0
+        new_face_mask[indices] = self.img[indices]
+        
+        self.mask = mask
+        self.new_face_mask = new_face_mask
+        return self
 
     def locate_face(self, new_img): 
         """Identify the selected face in a new image. 
@@ -137,7 +163,8 @@ class Facial_Edge():
         face2_img = img2[y2:y2+h, x2:x2+w, :]
         corr_mat = np.corrcoef(face1_img.flat, face2_img.flat)
         corr_coef = corr_mat[0, 1]
-        print(corr_coef)
-        if corr_coef > .7:
+        #print(corr_coef)
+        return corr_coef
+        """if corr_coef > .7:
             return True
-        return False
+        return False"""
