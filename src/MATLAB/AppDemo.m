@@ -6,7 +6,7 @@ clear; close all;
 app = adapp;
 
 % Set app input/output files
-app.imagedir = '../../Images/IQDev/';
+app.imagedir = '../../Images/IQTest/';
 app.metafilename = 'imageinfo.xlsx';
 app.resultsfilename = 'results.xlsx';
 
