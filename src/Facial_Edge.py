@@ -49,13 +49,13 @@ class Facial_Edge():
         face_options2 = self.profile_cascade.detectMultiScale(gray_img, scaleFactor=1.1, minNeighbors=5)
         combo_face_options = []
         mask = np.zeros(np.shape(img))
-        for face in face_options2: 
-            face_options
-        for (x, y, w, h) in face_options:
+
+        for (x, y, w, h) in face_options2:
             combo_face_options.append([x, y, w, h])
             mask[x:x+w, y:y+h] = 1
-        for (x, y, w, h) in face_options2:
-            if np.sum(mask[x:x+w, y:y+h])/(w*h) < .75:
+             
+        for (x, y, w, h) in face_options:
+            if np.sum(mask[x:x+w, y:y+h])/(w*h) < .1:
                 combo_face_options.append([x, y, w, h]) 
         if return_indices: 
             return combo_face_options
