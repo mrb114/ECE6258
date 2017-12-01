@@ -118,7 +118,7 @@ class FaceSwap():
                             matching_id = curr_face
                         print(curr_corr_coef)
                 # Didn't find a good match - this is probably a new face
-                if max_corr_coef < .4:
+                if max_corr_coef < .6:
                     self.total_num_faces += 1
                     new_face_id = "face_id%d" % self.total_num_faces
                     self.images[new_id]['faces'][new_face_id] = {}
