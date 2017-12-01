@@ -70,11 +70,11 @@ class IReg():
     def register(self):
         """Registers the reference image to the floating image(s).
            
-           Uses DFT image registration from imreg_dft package on each channel
-           of the reference and float image(s). Registration parameters are
-           averaged across channels and average is applied to each channel 
-           to produce the registered final image. The resulting registered image 
-           is stored in the object float member variable following the prescribed
+           Uses motion homography to register a floating image or image(s)
+           to a reference image.  The images are converted to grayscale 
+           prior to registration and the registration is applied to the 
+           original color images. The resulting registered image(s) 
+           is(are) stored in the object float member variable following the prescribed
            format: 
                
            object.float: {
@@ -101,14 +101,10 @@ class IReg():
             sz = self.ref.shape
              
             # Define the motion model
-            #warp_mode = cv2.MOTION_TRANSLATION
             warp_mode = cv2.MOTION_HOMOGRAPHY
              
-            # Define 2x3 or 3x3 matrices and initialize the matrix to identity
-            if warp_mode == cv2.MOTION_HOMOGRAPHY :
-                warp_matrix = np.eye(3, 3, dtype=np.float32)
-            else :
-                warp_matrix = np.eye(2, 3, dtype=np.float32)
+            # Define initialize the matrix to identity
+            warp_matrix = np.eye(3, 3, dtype=np.float32)
              
             # Specify the number of iterations.
             number_of_iterations = 5000;
@@ -123,12 +119,8 @@ class IReg():
             # Run the ECC algorithm. The results are stored in warp_matrix.
             (cc, warp_matrix) = cv2.findTransformECC (im1_gray,im2_gray,warp_matrix, warp_mode, criteria)
              
-            if warp_mode == cv2.MOTION_HOMOGRAPHY :
-                # Use warpPerspective for Homography 
-                registered_img = cv2.warpPerspective (curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
-            else :
-                # Use warpAffine for Translation, Euclidean and Affine
-                registered_img = cv2.warpAffine(curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
+            # Apply registration
+            registered_img = cv2.warpPerspective (curr_float, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
             self.float['Image%d' % float_image]['registered'] = registered_img
         return self
     

@@ -28,6 +28,7 @@ def allowed_file(filename):
 
 @app.route("/upload", methods=['POST'])
 def upload_img():
+    # Try to not upload bad things from the user
     try:
         files = request.files['file']
     except Exception: 
@@ -113,6 +114,7 @@ def swap_face(image_id, face_id):
     
 @app.route("/restart")
 def restart(): 
+    # Reset the FaceSwap object. Most likely called when the page reloads
     fs_obj.reset()
     return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
         
