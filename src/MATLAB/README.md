@@ -12,6 +12,8 @@ IQ Metrics
 ------------
 This MATLAB function computes image quality metrics for pairs of images provided in an input file, and writes the results to file.  
 
-To run, create an input file similar to "imageinfo.xlsx" in this directory. Then open IQDemo.m and set the input and output filename parameters. Finally, run the script.
-
 This code references the UNIQUE and MS-UNIQUE IQ algorithms, used with permisison from Mohit Prabhushankar.
+
+To run, create an input file similar to "imageinfo.xlsx" in this directory. Then open IQDemo.m and set the input and output filename parameters. Finally, run the script. This should reproduce the results found in the final term paper.
+
+Calculation of the aggregate statistics (found in the paper) was performed in Excel. For each metric column, the mean (Excel function AVERAGE) and sample standard deviation (STDEV.S) were calculated.
